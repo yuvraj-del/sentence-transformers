@@ -391,6 +391,27 @@ def test_community_detection_accepts_1d_embedding(as_numpy, min_community_size, 
     assert community_detection(embedding, min_community_size=min_community_size) == expected
 
 
+@pytest.mark.parametrize(
+    "device",
+    [
+        "cpu",
+        pytest.param("cuda", marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="GPU not available")),
+        pytest.param(
+            "mps", marks=pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
+        ),
+    ],
+)
+@pytest.mark.parametrize("min_community_size", [0, -1])
+def test_community_detection_non_positive_min_community_size(min_community_size, device):
+    """A minimum community size below 1 behaves like 1, as every point is in its own community."""
+    embeddings = torch.tensor([[1.0, 0.0, 0.0], [0.9, 0.1, 0.0], [0.0, 1.0, 0.0]], device=device)
+
+    result = community_detection(embeddings, threshold=0.8, min_community_size=min_community_size)
+
+    assert result == community_detection(embeddings, threshold=0.8, min_community_size=1)
+    assert sorted(sorted(community) for community in result) == [[0, 1], [2]]
+
+
 @pytest.mark.parametrize("as_numpy", [False, True])
 def test_community_detection_empty_input(as_numpy):
     embeddings = torch.tensor([])

@@ -297,6 +297,9 @@ def community_detection(
     if len(embeddings) < min_community_size:
         return []
 
+    # Every point is at least a community of itself, so a smaller minimum means the same as 1. The CPU path below
+    # also needs it to be at least 1 to read the min_community_size-th best score.
+    min_community_size = max(min_community_size, 1)
     threshold = torch.tensor(threshold, device=embeddings.device)
     embeddings = normalize_embeddings(embeddings)
 
